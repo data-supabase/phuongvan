@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { TaskDrawer } from '@/components/drawer/TaskDrawer';
 import { filterRows, hasFilter, type FilterState } from '@/components/table/filtering';
 import { TaskTable } from '@/components/table/TaskTable';
@@ -29,6 +30,13 @@ export function TablePage() {
 
   // đổi tuần thì đóng drawer (drawer tự lưu ghi chú đang gõ khi gỡ)
   useEffect(() => setOpenId(null), [week]);
+  // đến từ Dashboard với { open: id }: mở thẳng việc đó (chạy SAU effect trên khi mới vào trang)
+  const location = useLocation();
+  const openFromNav = (location.state as { open?: number } | null)?.open;
+  useEffect(() => { if (openFromNav != null) setOpenId(openFromNav); }, [openFromNav, location.key]);
+  useEffect(() => {
+    if (openId != null && !isLoading) document.getElementById(`row-${openId}`)?.scrollIntoView({ block: 'center' });
+  }, [openId, isLoading]);
 
   const state = useMemo<FilterState>(() => ({ filters: colFilters, q, cat }), [colFilters, q, cat]);
   const shown = useMemo(() => filterRows(rows, state, sortBy), [rows, state, sortBy]);

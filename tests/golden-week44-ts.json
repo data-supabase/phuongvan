@@ -1,0 +1,51 @@
+{
+  "total": 124,
+  "skipped": [],
+  "perSheet": {
+    "PL 3.12. TBKL 1056 CĐS": 9,
+    "PL1 TBKLGB T10 1806": 38,
+    "PL2 NQ HDQT 2070": 1,
+    "PL3.1. TBKL Cty con": 3,
+    "PL3.10. TBKL 963 SPM": 1,
+    "PL3.11. TBKL 1001 TTNC": 3,
+    "PL3.13 TBKL 1057 KHCL": 1,
+    "PL3.16 TBKL 1091 LAREC": 1,
+    "PL3.18A 1141 tu van": 2,
+    "PL3.19. 04 BDTT": 3,
+    "PL3.21 1252 KT-QLCL": 8,
+    "PL3.22 1254 TTNC": 12,
+    "PL3.25 1307 Biomass": 3,
+    "PL3.30 1541 tai cau truc KVF": 1,
+    "PL3.31 1585 Biomass": 12,
+    "PL3.32 1624 DAP": 5,
+    "PL3.33 1628 So hoa quy trinh": 1,
+    "PL3.34 1645 KH CN TMDV": 9,
+    "PL3.36 1752 phan bon hoa chat": 3,
+    "PL3.38 1871 Hop san xuat DAP": 8
+  },
+  "perUnit": {
+    "CĐS": 25,
+    "KT": 66,
+    "NCPT": 26,
+    "ĐCM": 9
+  },
+  "perStatusClass": {
+    "st-doing": 63,
+    "st-done": 35,
+    "st-late": 21,
+    "st-todo": 5
+  },
+  "perStatusRaw": {
+    "(trống)": 1,
+    "Chưa triển khai": 5,
+    "Hoàn thành": 35,
+    "Quá hạn": 1,
+    "Đang triển khai chậm tiến độ": 20,
+    "Đang triển khai": 62
+  },
+  "perSubUnit": {
+    "KT › P.CNATMT": 1,
+    "KT › P.NCƯD": 1,
+    "KT › Tổ NCS": 1
+  }
+}

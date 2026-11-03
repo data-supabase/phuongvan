@@ -27,7 +27,9 @@ test('TS: nguồn .ts giữ dạng NFC như legacy', () => {
   }
 });
 
-test('TS: classifyWorkbook khớp golden tuần 44/2026 (215 dòng)', async () => {
+// Bản TS khác legacy có chủ ý: bỏ sheet ẩn, bỏ "Phòng KT" → golden riêng. Ghi lại: UPDATE_GOLDEN=1
+const GOLD_TS = path.join(__dirname, 'golden-week44-ts.json');
+test('TS: classifyWorkbook khớp golden tuần 44/2026', async () => {
   const { rows, skipped } = await T.classifyWorkbook(wbOf());
   const count = (f) => { const o = {}; rows.forEach(r => [].concat(f(r)).forEach(k => o[k] = (o[k] || 0) + 1)); return Object.fromEntries(Object.entries(o).sort()); };
   const got = {
@@ -37,16 +39,24 @@ test('TS: classifyWorkbook khớp golden tuần 44/2026 (215 dòng)', async () =
     perStatusRaw: count(r => r.tinh_trang || '(trống)'),
     perSubUnit: count(r => [...T.subUnits(r.don_vi_dau_moi)]),
   };
-  assert.equal(rows.length, 215);
-  assert.deepEqual(JSON.parse(JSON.stringify(got)), JSON.parse(fs.readFileSync(path.join(__dirname, 'golden-week44.json'), 'utf8')));
+  if (process.env.UPDATE_GOLDEN) fs.writeFileSync(GOLD_TS, JSON.stringify(got, null, 2) + '\n');
+  assert.deepEqual(JSON.parse(JSON.stringify(got)), JSON.parse(fs.readFileSync(GOLD_TS, 'utf8')));
+  assert.ok(!Object.keys(got.perSheet).some(s => s.startsWith('PL1.TBKLGBT9')), 'sheet ẩn không được quét');
+  assert.ok(!rows.some(r => /^(CN ?TMDV \(.*\)|Phòng KT)$/.test(r.don_vi_dau_moi)), 'không lấy Phòng KT');
 });
 
-test('TS: toàn bộ dòng + key deep-equal legacy', async () => {
+test('TS: mỗi dòng giống legacy từng byte (trừ tên điền từ ô gộp), key giữ nguyên', async () => {
   const a = await T.classifyWorkbook(wbOf()), b = await L.classifyWorkbook(wbOf());
-  assert.deepEqual([...a.skipped], [...b.skipped]);
-  assert.equal(a.rows.length, b.rows.length);
-  // JSON giữ cả thứ tự dòng; so chuỗi để cả thứ tự khóa cũng phải giống
-  assert.equal(JSON.stringify(a.rows), JSON.stringify(b.rows));
+  const byKey = new Map(b.rows.map(r => [r.key, r]));
+  let filled = 0;
+  for (const r of a.rows) {
+    const l = byKey.get(r.key);
+    assert.ok(l, 'key phải trùng legacy: ' + r.noi_dung);
+    if (!l.noi_dung && r.noi_dung) filled++;
+    // so chuỗi để cả thứ tự khóa cũng phải giống
+    assert.equal(JSON.stringify({ ...r, noi_dung: l.noi_dung ? r.noi_dung : '' }), JSON.stringify(l));
+  }
+  assert.ok(filled > 0, 'tuần 44 có ô "Tên công việc" gộp cần điền');
   a.rows.forEach(r => assert.match(r.key, /^[0-9a-f]{64}$/));
 });
 
@@ -54,10 +64,11 @@ test('TS: console.assert tự kiểm của bộ phân loại', () => {
   const eq = (a, b) => assert.equal(String(a), b);
   eq(T.matchUnits('Ban KT-P.CNATMT'), 'KT');
   assert.equal(T.matchUnits('KTNB').length + T.matchUnits('TCKT').length, 0);
-  for (const l of ['Phòng KT', 'CN TMDV (Phòng KT)', 'CN TMDV (Phòng KT, Phòng KD)', 'CNTMDV (Phòng TH, KT,KD)']) {
-    eq(T.matchUnits(l), 'KT'); eq(T.subUnits(l), `KT › ${T.PHONG_KT}`);
-  }
-  assert.equal(T.matchUnits('Phòng KD').length + T.matchUnits('CNTMDV (Phòng KD, TH)').length + T.subUnits('Ban KT').length, 0);
+  // "Phòng KT" (CN TMDV) không thuộc Ban KT
+  for (const l of ['Phòng KT', 'CN TMDV (Phòng KT)', 'CN TMDV (Phòng KT, Phòng KD)', 'CNTMDV (Phòng TH, KT,KD)', 'Phòng KD'])
+    assert.equal(T.matchUnits(l).length + T.subUnits(l).length, 0, l);
+  eq(T.matchUnits('Ban KT; Phòng KT'), 'KT'); eq(T.matchUnits('Ban KT/ TMDV'), 'KT');
+  assert.equal(T.subUnits('Ban KT').length, 0);
   eq(T.matchUnits('TTNC; CĐS'), 'CĐS,NCPT'); eq(T.matchUnits('KT; ĐCM; KD'), 'KT,ĐCM');
   eq(T.subUnits('Ban KT-P.CNATMT; Ban KT-P.NCƯD; Ban KT-Tổ NCS'), 'KT › P.CNATMT,KT › P.NCƯD,KT › Tổ NCS');
   assert.equal(T.subUnits('Ban KT').length + T.subUnits('TT NCPT').length, 0);
@@ -66,7 +77,7 @@ test('TS: console.assert tự kiểm của bộ phân loại', () => {
 test('TS: matchUnits/subUnits/meetingName giống legacy trên nhiều mẫu', () => {
   const samples = ['Ban KT', 'Ban KT-Tổ NCS', 'Phòng KT', 'CĐS', 'Ban Chuyển đổi số', 'Ban NCPT', 'TTNC', 'ĐCM', 'Nhà máy Đạm Cà Mau',
     'Ban TCKT', 'KTNB', 'Ban KT, CĐS', 'KT; ĐCM; KD', 'Phòng KD', '', 'ban kt', 'Ban KT – Tổ A; CĐS-Nhóm B', 'Ban Kỹ thuật', 'Trung tâm nghiên cứu', 'KT.TT'];
-  for (const s of samples) {
+  for (const s of samples.filter(s => !/Phòng/.test(s))) { // Phòng KT: TS bỏ có chủ ý
     assert.deepEqual(T.matchUnits(s), [...L.matchUnits(s)], s);
     assert.deepEqual(T.subUnits(s), [...L.subUnits(s)], s);
   }

@@ -25,7 +25,6 @@ __export(stdin_exports, {
   CAT_LABEL: () => CAT_LABEL,
   FIELDS: () => FIELDS,
   OWNER_ID: () => OWNER_ID,
-  PHONG_KT: () => PHONG_KT,
   ROLE_LABEL: () => ROLE_LABEL,
   UNITS: () => UNITS,
   UNIT_RX: () => UNIT_RX,
@@ -33,7 +32,6 @@ __export(stdin_exports, {
   cleanLead: () => cleanLead,
   countBy: () => countBy,
   genPw: () => genPw,
-  isPhongKT: () => isPhongKT,
   loginEmail: () => loginEmail,
   makeUsername: () => makeUsername,
   matchUnits: () => matchUnits,
@@ -61,18 +59,15 @@ var UNIT_RX = {
   "NCPT": new RegExp(`NCPT|${NA}TTNC${NB}|Trung t\xE2m nghi\xEAn c\u1EE9u`, "iu"),
   "\u0110CM": new RegExp(`${NA}\u0110CM${NB}|Nh\xE0 m\xE1y \u0110\u1EA1m C\xE0 Mau`, "iu")
 };
-var PHONG_KT = "Ph\xF2ng KT (CN TMDV)";
-var isPhongKT = (lead) => /Phòng\s+KT(?![\p{L}\p{N}_])/iu.test(lead) || [...lead.matchAll(/\(([^)]*)\)/g)].some((m) => /Phòng/i.test(m[1]) && UNIT_RX.KT.test(m[1]));
 var cleanLead = (lead) => lead.replace(/\([^)]*\)|Phòng [^;,/\n]*/g, "");
 function matchUnits(lead) {
   const s = cleanLead(lead);
-  return Object.keys(UNIT_RX).filter((u) => UNIT_RX[u].test(s) || u === "KT" && isPhongKT(lead));
+  return Object.keys(UNIT_RX).filter((u) => UNIT_RX[u].test(s));
 }
 var SUB_RX = Object.keys(UNIT_RX).map((u) => [u, new RegExp(`${NA}${u}\\s*[-\u2013]\\s*([^;,/\\n]+)`, "giu")]);
 function subUnits(lead) {
   const s = cleanLead(lead);
-  const subs = SUB_RX.flatMap(([u, rx]) => [...s.matchAll(rx)].map((m) => `${u} \u203A ${m[1].trim()}`));
-  return isPhongKT(lead) ? [...subs, `KT \u203A ${PHONG_KT}`] : subs;
+  return SUB_RX.flatMap(([u, rx]) => [...s.matchAll(rx)].map((m) => `${u} \u203A ${m[1].trim()}`));
 }
 
 // ../src/lib/classify/classifier.ts
@@ -107,8 +102,8 @@ async function sha256(s) {
 }
 async function classifyWorkbook(wb) {
   const out = /* @__PURE__ */ new Map(), skipped = [];
-  for (const name of wb.SheetNames) {
-    if (SKIP_SHEETS.has(name)) continue;
+  for (const [si, name] of wb.SheetNames.entries()) {
+    if (SKIP_SHEETS.has(name) || wb.Workbook?.Sheets?.[si]?.Hidden) continue;
     const rows = import_xlsx.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null, raw: false, blankrows: true });
     const isLead = (h) => FIELDS.don_vi_dau_moi(h) || LEAD_FALLBACK(h);
     const hi = rows.slice(0, 15).findIndex((r) => r.some((c) => isLead(hdr(c))) && r.some((c) => FIELDS.noi_dung(hdr(c))));
@@ -125,20 +120,29 @@ async function classifyWorkbook(wb) {
     });
     if (!("don_vi_dau_moi" in cols)) cols.don_vi_dau_moi = rows[hi].findIndex((c) => LEAD_FALLBACK(hdr(c)));
     const rg = import_xlsx.utils.decode_range(wb.Sheets[name]["!ref"] || "A1"), lc = cols.don_vi_dau_moi;
-    for (const m of wb.Sheets[name]["!merges"] || []) {
-      if (m.s.c !== m.e.c || m.s.c - rg.s.c !== lc) continue;
-      const v = rows[m.s.r - rg.s.r]?.[lc];
-      for (let r = m.s.r - rg.s.r + 1; v != null && r <= m.e.r - rg.s.r; r++)
-        if (r > hi && rows[r] && rows[r][lc] == null) rows[r][lc] = v;
-    }
+    const fillDown = (col, set) => {
+      for (const m of wb.Sheets[name]["!merges"] || []) {
+        if (col == null || m.s.c !== m.e.c || m.s.c - rg.s.c !== col) continue;
+        const v = rows[m.s.r - rg.s.r]?.[col];
+        for (let r = m.s.r - rg.s.r + 1; v != null && r <= m.e.r - rg.s.r; r++)
+          if (r > hi && rows[r] && rows[r][col] == null) set(r, v);
+      }
+    };
+    fillDown(lc, (r, v) => {
+      rows[r][lc] = v;
+    });
+    const nameFill = /* @__PURE__ */ new Map();
+    fillDown(cols.noi_dung, (r, v) => nameFill.set(r, v));
     const meeting = meetingName(name, rows);
-    for (const r of rows.slice(hi + 1)) {
+    for (let i = hi + 1; i < rows.length; i++) {
+      const r = rows[i];
       const rec = Object.fromEntries(keys.map((f) => [f, f in cols ? norm(r[cols[f]]) : ""]));
       if (!rec.don_vi_dau_moi || !(rec.noi_dung || rec.ket_luan)) continue;
       const units = matchUnits(rec.don_vi_dau_moi);
       if (!units.length) continue;
       const row = { sheet: name.trim(), thong_tin_cuoc_hop: meeting, units, ...rec, key: "" };
       row.key = await sha256([row.sheet, rec.noi_dung, rec.ket_luan, rec.don_vi_dau_moi].join("|"));
+      if (!rec.noi_dung) row.noi_dung = norm(nameFill.get(i));
       out.set(row.key, row);
     }
   }
@@ -211,7 +215,6 @@ var genPw = () => {
   CAT_LABEL,
   FIELDS,
   OWNER_ID,
-  PHONG_KT,
   ROLE_LABEL,
   UNITS,
   UNIT_RX,
@@ -219,7 +222,6 @@ var genPw = () => {
   cleanLead,
   countBy,
   genPw,
-  isPhongKT,
   loginEmail,
   makeUsername,
   matchUnits,

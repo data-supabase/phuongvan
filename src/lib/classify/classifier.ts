@@ -48,8 +48,9 @@ export async function sha256(s: string): Promise<string> {
 
 export async function classifyWorkbook(wb: WorkBook): Promise<{ rows: ClassifiedRow[]; skipped: string[] }> {
   const out = new Map<string, ClassifiedRow>(), skipped: string[] = [];
-  for (const name of wb.SheetNames) {
-    if (SKIP_SHEETS.has(name)) continue;
+  for (const [si, name] of wb.SheetNames.entries()) {
+    // Hidden: 1 = ẩn, 2 = rất ẩn → bỏ qua
+    if (SKIP_SHEETS.has(name) || wb.Workbook?.Sheets?.[si]?.Hidden) continue;
     const rows = utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1, defval: null, raw: false, blankrows: true });
     const isLead = (h: string) => FIELDS.don_vi_dau_moi(h) || LEAD_FALLBACK(h);
     const hi = rows.slice(0, 15).findIndex(r => r.some(c => isLead(hdr(c))) && r.some(c => FIELDS.noi_dung(hdr(c))));
@@ -62,16 +63,23 @@ export async function classifyWorkbook(wb: WorkBook): Promise<{ rows: Classified
       if (f) cols[f] = j;
     });
     if (!('don_vi_dau_moi' in cols)) cols.don_vi_dau_moi = rows[hi].findIndex(c => LEAD_FALLBACK(hdr(c)));
-    // ô "Đơn vị đầu mối" gộp dọc: SheetJS chỉ giữ giá trị ở dòng đầu, điền xuống các dòng gộp (chỉ cột này)
+    // ô gộp dọc: SheetJS chỉ giữ giá trị ở dòng đầu, điền xuống các dòng gộp
     const rg = utils.decode_range(wb.Sheets[name]['!ref'] || 'A1'), lc = cols.don_vi_dau_moi as number;
-    for (const m of wb.Sheets[name]['!merges'] || []) {
-      if (m.s.c !== m.e.c || m.s.c - rg.s.c !== lc) continue;
-      const v = rows[m.s.r - rg.s.r]?.[lc];
-      for (let r = m.s.r - rg.s.r + 1; v != null && r <= m.e.r - rg.s.r; r++)
-        if (r > hi && rows[r] && rows[r][lc] == null) rows[r][lc] = v;
-    }
+    const fillDown = (col: number | undefined, set: (r: number, v: unknown) => void) => {
+      for (const m of wb.Sheets[name]['!merges'] || []) {
+        if (col == null || m.s.c !== m.e.c || m.s.c - rg.s.c !== col) continue;
+        const v = rows[m.s.r - rg.s.r]?.[col];
+        for (let r = m.s.r - rg.s.r + 1; v != null && r <= m.e.r - rg.s.r; r++)
+          if (r > hi && rows[r] && rows[r][col] == null) set(r, v);
+      }
+    };
+    fillDown(lc, (r, v) => { rows[r][lc] = v; });
+    // "Tên công việc" gộp chỉ điền để HIỂN THỊ; key + điều kiện lọc vẫn dùng ô gốc (giữ ghi chú mang sang tuần sau)
+    const nameFill = new Map<number, unknown>();
+    fillDown(cols.noi_dung, (r, v) => nameFill.set(r, v));
     const meeting = meetingName(name, rows);
-    for (const r of rows.slice(hi + 1)) {
+    for (let i = hi + 1; i < rows.length; i++) {
+      const r = rows[i];
       const rec = Object.fromEntries(keys.map(f => [f, f in cols ? norm(r[cols[f] as number]) : ''])) as Record<FieldKey, string>;
       if (!rec.don_vi_dau_moi || !(rec.noi_dung || rec.ket_luan)) continue;
       // chỉ lấy việc có KT/CĐS/NCPT/ĐCM ở cột Đơn vị đầu mối (không tính cột phối hợp)
@@ -79,6 +87,7 @@ export async function classifyWorkbook(wb: WorkBook): Promise<{ rows: Classified
       if (!units.length) continue;
       const row = { sheet: name.trim(), thong_tin_cuoc_hop: meeting, units, ...rec, key: '' } as ClassifiedRow;
       row.key = await sha256([row.sheet, rec.noi_dung, rec.ket_luan, rec.don_vi_dau_moi].join('|'));
+      if (!rec.noi_dung) row.noi_dung = norm(nameFill.get(i));
       out.set(row.key, row); // bỏ dòng trùng y hệt
     }
   }

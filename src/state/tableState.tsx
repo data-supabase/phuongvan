@@ -8,7 +8,8 @@ import { useWeek } from './week';
 export type ColFilters = Record<ColKey, Set<string>>;
 /** dir: 1 = A→Z, -1 = Z→A (như legacy) */
 export type SortBy = { key: ColKey; dir: 1 | -1 } | null;
-export interface DrillTarget { week?: string; unit?: string; meet?: string; cat?: Cat }
+/** open: id công việc cần mở thẳng khung chi tiết ở trang Bảng */
+export interface DrillTarget { week?: string; unit?: string; meet?: string; cat?: Cat; open?: number }
 
 export interface TableStateValue {
   colFilters: ColFilters;
@@ -55,7 +56,7 @@ export function TableStateProvider({ children }: { children: ReactNode }) {
     setColFilters(f);
     setQ('');
     setCat(go.cat ?? '');
-    navigate('/table');
+    navigate('/table', go.open != null ? { state: { open: go.open } } : undefined);
   }, [week, setWeek, navigate]);
 
   const value = useMemo(

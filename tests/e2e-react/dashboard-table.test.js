@@ -61,6 +61,18 @@ test('dashboard: bấm dòng đơn vị rủi ro -> lọc đơn vị ĐCM + ch�
   app.assertClean(); await app.close();
 });
 
+test('dashboard: bấm 1 việc ở "Sắp đến hạn & quá hạn" -> mở thẳng drawer của việc đó', async () => {
+  const app = await newApp(env.browser, env.url, mk());
+  await app.login('u');
+  const row = app.page.getByTestId('due-soon-row').first();
+  const name = await txt(row.locator('span').first());
+  await row.locator('button').click();
+  await app.page.getByTestId('task-drawer').waitFor();
+  assert.match(app.page.url(), /#\/table$/);
+  assert.equal(await txt(app.page.getByTestId('drawer-title')), name);
+  app.assertClean(); await app.close();
+});
+
 test('dashboard: bấm biểu đồ xu hướng tuần 43 -> chuyển sang tuần 43 rồi lọc', async () => {
   const app = await newApp(env.browser, env.url, mk());
   await app.login('u');

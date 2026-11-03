@@ -16,9 +16,19 @@ describe('parseDeadline', () => {
     expect(iso('15/11/2026 - 30/11/2026')).toBe('2026-11-30');
     expect(iso('Hoàn thành trước 20/12/2026\n(gia hạn 10/01/2027)')).toBe('2027-01-10');
   });
-  it('tháng/quý/năm/mơ hồ/rỗng -> null', () => {
-    for (const s of ['Tháng 08/2026', 'Tháng 9/2026', 'Từ tháng 9/2026', 'Quý I/2027', 'Quý 3/2026', 'Quý IV/ 2026', 'Năm 2026',
-      'Trong năm 2026', 'Thường xuyên', 'Hàng quý / Hàng năm', 'Theo tiến độ dự án', 'Được duyệt chủ trương đầu tư trong năm 2026', '', '  '])
+  it('tháng/quý/năm -> ngày cuối chu kỳ', () => {
+    expect(iso('Tháng 08/2026')).toBe('2026-08-31');
+    expect(iso('Tháng 2/2028')).toBe('2028-02-29');
+    expect(iso('Tháng 12/2027')).toBe('2027-12-31');
+    expect(iso('Quý I/2027')).toBe('2027-03-31');
+    expect(iso('Quý III/2026')).toBe('2026-09-30');
+    expect(iso('Quý 2/2026')).toBe('2026-06-30');
+    expect(iso('Quý IV/ 2026')).toBe('2026-12-31');
+    expect(iso('Năm 2026')).toBe('2026-12-31');
+    expect(iso('Trong năm 2026')).toBe('2026-12-31');
+  });
+  it('mơ hồ/rỗng -> null', () => {
+    for (const s of ['Từ tháng 9/2026', 'Tháng 13/2026', 'Thường xuyên', 'Hàng quý / Hàng năm', 'Theo tiến độ dự án', '', '  '])
       expect(parseDeadline(s), s).toBeNull();
     expect(parseDeadline(null)).toBeNull();
   });
@@ -40,8 +50,10 @@ describe('dueInfo', () => {
     expect(dueInfo('01/01/2020', 'Hoàn thành', TODAY).kind).toBeNull();
     expect(dueInfo('01/01/2020', 'Chưa hoàn thành', TODAY).kind).toBe('overdue');
   });
-  it('thời hạn không cụ thể -> null', () => {
-    expect(dueInfo('Quý III/2026', 'Đang thực hiện', TODAY).kind).toBeNull();
+  it('thời hạn theo chu kỳ / không cụ thể', () => {
+    expect(dueInfo('Quý III/2026', 'Đang thực hiện', TODAY)).toEqual({ kind: 'overdue', days: 34 });
+    expect(dueInfo('Tháng 11/2026', 'Đang thực hiện', TODAY).kind).toBeNull(); // 30/11 còn 27 ngày
+    expect(dueInfo('Thường xuyên', 'Đang thực hiện', TODAY).kind).toBeNull();
     expect(dueInfo('', 'Đang thực hiện', TODAY).kind).toBeNull();
   });
   it('tính theo ngày Asia/Ho_Chi_Minh, không theo UTC', () => {
