@@ -1,14 +1,19 @@
 ﻿const { test, before, after } = require('node:test'), assert = require('node:assert/strict');
 const path = require('path');
 const { setup, newApp, makeDb, profile, task, sampleTasks } = require('./harness');
-const { classifyWorkbook, XLSX } = require('../lib.js'); // bộ phân loại legacy == bản TS (classify-ts.test.js)
+const { XLSX } = require('../lib.js');
+const esbuild = require('esbuild');
 
 const XLSX_FILE = path.join(__dirname, '..', 'fixtures', 'week44.xlsx');
-let env, FILE_ROWS;
+let env, FILE_ROWS, N;
 before(async () => {
   env = await setup();
-  FILE_ROWS = (await classifyWorkbook(XLSX.readFile(XLSX_FILE))).rows;
-  assert.equal(FILE_ROWS.length, 215);
+  // bộ phân loại TS của app (khác legacy: bỏ sheet ẩn, Phòng KT; thêm PTGĐ Hải)
+  const out = path.join(__dirname, '..', '.tmp', 'classify-import.cjs');
+  esbuild.buildSync({ entryPoints: [path.join(__dirname, '..', '..', 'src', 'lib', 'classify', 'index.ts')], bundle: true, platform: 'node', format: 'cjs', outfile: out, external: ['xlsx'], logLevel: 'silent' });
+  FILE_ROWS = (await require(out).classifyWorkbook(XLSX.readFile(XLSX_FILE))).rows;
+  N = FILE_ROWS.length;
+  assert.equal(N, require('../golden-week44-ts.json').total);
 });
 after(async () => { await env.teardown(); });
 
@@ -31,7 +36,7 @@ async function pickFile(app, week = '44/2026', file = XLSX_FILE) {
   await app.page.getByTestId('import-week').fill(week);
 }
 
-test('nạp tuần 44 (215 việc): xác nhận -> upsert 2 lô đúng quy tắc, chỉ xóa việc cũ có units, KHÔNG xóa dòng ẩn', async () => {
+test('nạp tuần 44 (cả file): xác nhận -> upsert 2 lô đúng quy tắc, chỉ xóa việc cũ có units, KHÔNG xóa dòng ẩn', async () => {
   const db = seeded(), app = await newApp(env.browser, env.url, db);
   await app.login('ad', undefined, '/import');
   const p = app.page;
@@ -44,18 +49,20 @@ test('nạp tuần 44 (215 việc): xác nhận -> upsert 2 lô đúng quy tắc
   await p.getByTestId('dialog-ok').click();
   await p.getByTestId('import-msg').filter({ hasText: '✓ Tuần 44/2026' }).waitFor();
   const msg = await txt(p.getByTestId('import-msg'));
-  assert.match(msg, /đã nạp 215 công việc, mang sang 2 ghi chú từ tuần 43\/2026, xóa 1 việc không còn trong file/);
-  assert.match(msg, /Bỏ qua \(không có cột Đơn vị đầu mối\)/);
+  assert.match(msg, new RegExp(`đã nạp ${N} công việc,`));
+  assert.match(msg, / mang sang 2 ghi chú từ tuần 43\/2026, xóa 1 việc không còn trong file/);
+  // các sheet thiếu cột Đơn vị đầu mối của tuần 44 đều là sheet ẩn -> không quét, không báo bỏ qua
+  assert.doesNotMatch(msg, /Bỏ qua/);
 
   const batches = db.log.upsert;
   assert.equal(batches.length, 2, 'phải 2 lô (không trộn ghi_chu)');
   const [rest, carry] = batches;
-  assert.equal(rest.length + carry.length, 215);
+  assert.equal(rest.length + carry.length, N);
   assert.equal(carry.length, 2, 'chỉ k1,k2 được mang ghi chú (k0 đã có ở tuần này)');
   assert.ok(rest.every((r) => !('ghi_chu' in r)), 'lô 1 không được có ghi_chu (supabase-js sẽ ghi đè null)');
   assert.deepEqual(carry.map((r) => r.ghi_chu).sort(), ['ghi chú tuần trước 1', 'ghi chú tuần trước 2']);
   assert.ok([...rest, ...carry].every((r) => r.tuan === '44/2026' && r.updated_at && r.key && Array.isArray(r.units)));
-  assert.equal(new Set([...rest, ...carry].map((r) => r.key)).size, 215);
+  assert.equal(new Set([...rest, ...carry].map((r) => r.key)).size, N);
 
   assert.equal(db.log.del.length, 1);
   assert.deepEqual(db.log.del[0].ids, [201], 'chỉ xóa việc cũ có units');
@@ -63,7 +70,7 @@ test('nạp tuần 44 (215 việc): xác nhận -> upsert 2 lô đúng quy tắc
   assert.ok(db.tasks.some((t) => t.id === 202), 'dòng ẩn phải còn');
   assert.equal(db.tasks.find((t) => t.id === 200).ghi_chu, 'giữ lại', 'ghi chú dòng đã có phải giữ nguyên');
   // danh sách tuần cập nhật số việc sau khi nạp
-  await p.getByTestId('week-row-44-2026').filter({ hasText: /^44\/2026215/ }).waitFor();
+  await p.getByTestId('week-row-44-2026').filter({ hasText: new RegExp(`^44/2026${N}`) }).waitFor();
   app.assertClean(); await app.close();
 });
 
@@ -88,7 +95,7 @@ test('nạp tuần mới (chưa có dữ liệu): không hỏi xác nhận, 1 l�
   await app.page.getByTestId('import-msg').filter({ hasText: '✓ Tuần 45/2026' }).waitFor();
   assert.equal(await app.page.getByTestId('dialog').count(), 0);
   assert.equal(db.log.upsert.length, 1);
-  assert.equal(db.log.upsert[0].length, 215);
+  assert.equal(db.log.upsert[0].length, N);
   assert.equal(db.log.del.length, 0);
   app.assertClean(); await app.close();
 });

@@ -25,6 +25,8 @@ __export(stdin_exports, {
   CAT_LABEL: () => CAT_LABEL,
   FIELDS: () => FIELDS,
   OWNER_ID: () => OWNER_ID,
+  PTGD_HAI: () => PTGD_HAI,
+  PTGD_HAI_RX: () => PTGD_HAI_RX,
   ROLE_LABEL: () => ROLE_LABEL,
   UNITS: () => UNITS,
   UNIT_RX: () => UNIT_RX,
@@ -49,7 +51,9 @@ __export(stdin_exports, {
 module.exports = __toCommonJS(stdin_exports);
 
 // ../src/lib/classify/units.ts
-var UNITS = ["KT", "C\u0110S", "NCPT", "\u0110CM"];
+var PTGD_HAI = "PTG\u0110 H\u1EA3i";
+var PTGD_HAI_RX = /Nguyễn\s+Duy\s+Hải/iu;
+var UNITS = ["KT", "C\u0110S", "NCPT", "\u0110CM", PTGD_HAI];
 var NB = "(?![\\p{L}\\p{N}_])";
 var NA = "(?<![\\p{L}\\p{N}_.])";
 var UNIT_RX = {
@@ -139,6 +143,7 @@ async function classifyWorkbook(wb) {
       const rec = Object.fromEntries(keys.map((f) => [f, f in cols ? norm(r[cols[f]]) : ""]));
       if (!rec.don_vi_dau_moi || !(rec.noi_dung || rec.ket_luan)) continue;
       const units = matchUnits(rec.don_vi_dau_moi);
+      if (PTGD_HAI_RX.test(rec.ket_luan)) units.push(PTGD_HAI);
       if (!units.length) continue;
       const row = { sheet: name.trim(), thong_tin_cuoc_hop: meeting, units, ...rec, key: "" };
       row.key = await sha256([row.sheet, rec.noi_dung, rec.ket_luan, rec.don_vi_dau_moi].join("|"));
@@ -215,6 +220,8 @@ var genPw = () => {
   CAT_LABEL,
   FIELDS,
   OWNER_ID,
+  PTGD_HAI,
+  PTGD_HAI_RX,
   ROLE_LABEL,
   UNITS,
   UNIT_RX,

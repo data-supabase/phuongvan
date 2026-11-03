@@ -45,9 +45,9 @@ describe('unitBreakdown / unitRiskRanking', () => {
     t('Triển khai chậm', ['CĐS']), t('Hoàn thành', ['CĐS']),
     t('Triển khai chậm', ['NCPT', 'CĐS']),
   ];
-  it('trả đủ 4 đơn vị kể cả 0 việc, đúng thứ tự', () => {
+  it('trả đủ 5 đơn vị kể cả 0 việc, đúng thứ tự', () => {
     const b = unitBreakdown(rows);
-    expect(b.map((x) => x.unit)).toEqual(['KT', 'CĐS', 'NCPT', 'ĐCM']);
+    expect(b.map((x) => x.unit)).toEqual(['KT', 'CĐS', 'NCPT', 'ĐCM', 'PTGĐ Hải']);
     expect(b[3].total).toBe(0);
     expect(b[1].total).toBe(3); // việc đa đơn vị tính vào từng đơn vị
   });

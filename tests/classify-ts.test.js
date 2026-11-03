@@ -48,8 +48,13 @@ test('TS: classifyWorkbook khớp golden tuần 44/2026', async () => {
 test('TS: mỗi dòng giống legacy từng byte (trừ tên điền từ ô gộp), key giữ nguyên', async () => {
   const a = await T.classifyWorkbook(wbOf()), b = await L.classifyWorkbook(wbOf());
   const byKey = new Map(b.rows.map(r => [r.key, r]));
-  let filled = 0;
-  for (const r of a.rows) {
+  let filled = 0, hai = 0;
+  for (const r0 of a.rows) {
+    // nhóm "PTGĐ Hải" (tên ở cột Kết luận) là quy tắc mới, legacy không có
+    const isHai = r0.units.includes(T.PTGD_HAI);
+    if (isHai) { hai++; assert.match(r0.ket_luan, /Nguyễn\s+Duy\s+Hải/u); }
+    const r = isHai ? { ...r0, units: r0.units.filter(u => u !== T.PTGD_HAI) } : r0;
+    if (isHai && !r.units.length) continue;
     const l = byKey.get(r.key);
     assert.ok(l, 'key phải trùng legacy: ' + r.noi_dung);
     if (!l.noi_dung && r.noi_dung) filled++;
@@ -57,6 +62,7 @@ test('TS: mỗi dòng giống legacy từng byte (trừ tên điền từ ô g�
     assert.equal(JSON.stringify({ ...r, noi_dung: l.noi_dung ? r.noi_dung : '' }), JSON.stringify(l));
   }
   assert.ok(filled > 0, 'tuần 44 có ô "Tên công việc" gộp cần điền');
+  assert.ok(hai > 0, 'tuần 44 có việc của PTGĐ Nguyễn Duy Hải');
   a.rows.forEach(r => assert.match(r.key, /^[0-9a-f]{64}$/));
 });
 
