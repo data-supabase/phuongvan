@@ -143,7 +143,7 @@ async function classifyWorkbook(wb) {
       const rec = Object.fromEntries(keys.map((f) => [f, f in cols ? norm(r[cols[f]]) : ""]));
       if (!rec.don_vi_dau_moi || !(rec.noi_dung || rec.ket_luan)) continue;
       const units = matchUnits(rec.don_vi_dau_moi);
-      if (PTGD_HAI_RX.test(rec.ket_luan)) units.push(PTGD_HAI);
+      if (!units.length && PTGD_HAI_RX.test(rec.ket_luan)) units.push(PTGD_HAI);
       if (!units.length) continue;
       const row = { sheet: name.trim(), thong_tin_cuoc_hop: meeting, units, ...rec, key: "" };
       row.key = await sha256([row.sheet, rec.noi_dung, rec.ket_luan, rec.don_vi_dau_moi].join("|"));

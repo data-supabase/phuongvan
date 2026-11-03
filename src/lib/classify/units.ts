@@ -1,6 +1,6 @@
 // Port NGUYÊN VĂN từ legacy/app.js:3-41. Không import xlsx. Không "dọn dẹp" regex.
 // Ký tự đặc biệt viết bằng escape: › = "›", ̀-ͯ = dấu kết hợp.
-// Nhóm riêng: việc có tên PTGĐ Nguyễn Duy Hải ở cột Kết luận (đơn vị đầu mối là gì cũng lấy)
+// Nhóm riêng: việc có tên PTGĐ Nguyễn Duy Hải ở cột Kết luận mà đầu mối ngoài 4 đơn vị trên
 export const PTGD_HAI = 'PTGĐ Hải';
 export const PTGD_HAI_RX = /Nguyễn\s+Duy\s+Hải/iu;
 export const UNITS = ['KT', 'CĐS', 'NCPT', 'ĐCM', PTGD_HAI];

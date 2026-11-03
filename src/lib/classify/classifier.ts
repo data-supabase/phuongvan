@@ -84,7 +84,8 @@ export async function classifyWorkbook(wb: WorkBook): Promise<{ rows: Classified
       if (!rec.don_vi_dau_moi || !(rec.noi_dung || rec.ket_luan)) continue;
       // chỉ lấy việc có KT/CĐS/NCPT/ĐCM ở cột Đơn vị đầu mối (không tính cột phối hợp)
       const units = matchUnits(rec.don_vi_dau_moi);
-      if (PTGD_HAI_RX.test(rec.ket_luan)) units.push(PTGD_HAI);
+      // chỉ khi đầu mối KHÔNG thuộc 4 đơn vị: việc đã thuộc KT/CĐS/NCPT/ĐCM giữ nguyên nhóm, không đếm 2 lần
+      if (!units.length && PTGD_HAI_RX.test(rec.ket_luan)) units.push(PTGD_HAI);
       if (!units.length) continue;
       const row = { sheet: name.trim(), thong_tin_cuoc_hop: meeting, units, ...rec, key: '' } as ClassifiedRow;
       row.key = await sha256([row.sheet, rec.noi_dung, rec.ket_luan, rec.don_vi_dau_moi].join('|'));

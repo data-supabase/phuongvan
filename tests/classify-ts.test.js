@@ -52,7 +52,7 @@ test('TS: mỗi dòng giống legacy từng byte (trừ tên điền từ ô g�
   for (const r0 of a.rows) {
     // nhóm "PTGĐ Hải" (tên ở cột Kết luận) là quy tắc mới, legacy không có
     const isHai = r0.units.includes(T.PTGD_HAI);
-    if (isHai) { hai++; assert.match(r0.ket_luan, /Nguyễn\s+Duy\s+Hải/u); }
+    if (isHai) { hai++; assert.match(r0.ket_luan, /Nguyễn\s+Duy\s+Hải/u); assert.deepEqual(r0.units, [T.PTGD_HAI], 'PTGĐ Hải chỉ gán khi ngoài 4 đơn vị'); }
     const r = isHai ? { ...r0, units: r0.units.filter(u => u !== T.PTGD_HAI) } : r0;
     if (isHai && !r.units.length) continue;
     const l = byKey.get(r.key);
