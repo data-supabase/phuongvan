@@ -1,0 +1,28 @@
+﻿{
+    "name":  "tests",
+    "version":  "1.0.0",
+    "description":  "",
+    "main":  "index.js",
+    "scripts":  {
+                    "test":  "node --test --test-concurrency=1 unit.test.js golden.test.js smoke.test.js fixes.test.js classify-ts.test.js e2e-react/login.test.js e2e-react/dashboard-table.test.js e2e-react/import.test.js e2e-react/users.test.js e2e-react/xss-mobile.test.js",
+                    "test:e2e-react":  "node --test --test-concurrency=1 e2e-react/login.test.js e2e-react/dashboard-table.test.js e2e-react/import.test.js e2e-react/users.test.js e2e-react/xss-mobile.test.js",
+                    "test:unit":  "node --test unit.test.js golden.test.js classify-ts.test.js"
+                },
+    "keywords":  [
+
+                 ],
+    "author":  "",
+    "license":  "ISC",
+    "type":  "commonjs",
+    "dependencies":  {
+                         "@supabase/supabase-js":  "^2.45.4",
+                         "playwright":  "^1.64.1",
+                         "xlsx":  "^0.18.5"
+                     },
+    "private":  true,
+    "devDependencies":  {
+                            "esbuild":  "^0.28.2",
+                            "typescript":  "^7.0.2"
+                        }
+}
+

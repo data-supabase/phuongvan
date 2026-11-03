@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Báo cáo tuần</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- Màn hình đăng nhập: hiện khi chưa có phiên -->
+  <div id="login" class="login" hidden>
+    <form id="loginForm" class="login-card" autocomplete="on">
+      <div class="brand"><span class="logo" aria-hidden="true">BC</span>
+        <div><b>Báo cáo tuần</b><small>KT · CĐS · NCPT · ĐCM</small></div>
+      </div>
+      <h1>Đăng nhập</h1>
+      <p class="sub">Dùng tài khoản do Quản trị cấp.</p>
+      <label>Tên đăng nhập<input type="text" id="loginEmail" autocomplete="username" autocapitalize="none"
+          spellcheck="false" placeholder="vd: vanhp" required></label>
+      <label>Mật khẩu<input type="password" id="loginPw" autocomplete="current-password" required></label>
+      <button type="submit" class="btn-primary" id="loginBtn">Đăng nhập</button>
+      <p class="login-msg" id="loginMsg" role="alert"></p>
+      <button type="button" class="ghost-btn" id="loginRetry" hidden>Thử lại</button>
+      <p class="swap">Chưa có tài khoản? <button type="button" class="link-btn" id="toReg">Đăng ký</button></p>
+    </form>
+    <form id="regForm" class="login-card" autocomplete="off" hidden>
+      <div class="brand"><span class="logo" aria-hidden="true">BC</span>
+        <div><b>Báo cáo tuần</b><small>KT · CĐS · NCPT · ĐCM</small></div>
+      </div>
+      <h1>Đăng ký tài khoản</h1>
+      <p class="sub">Sau khi gửi, Quản trị sẽ duyệt và cấp quyền cho bạn.</p>
+      <label class="av-pick reg-av" title="Chọn ảnh đại diện (không bắt buộc)">
+        <span class="avatar xl" id="rAvPrev"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg></span>
+        <input type="file" id="rAv" accept="image/jpeg,image/png,image/webp" class="sr-only" aria-label="Chọn ảnh đại diện">
+        <small>Ảnh đại diện (không bắt buộc)</small>
+      </label>
+      <label>Họ và tên<input id="rName" placeholder="vd: Huỳnh Phương Vân" required></label>
+      <!-- tên đăng nhập do hệ thống tạo từ họ tên; người đăng ký chỉ xem, không sửa -->
+      <div class="reg-user">Tên đăng nhập: <b id="rUser">—</b>
+        <small>Hệ thống tự tạo từ họ tên; nếu trùng sẽ thêm số từ 1 (vd baolt1).</small></div>
+      <label>Mật khẩu<input type="password" id="rPw1" minlength="8" required autocomplete="new-password"
+          placeholder="≥ 8 ký tự"></label>
+      <label>Nhập lại mật khẩu<input type="password" id="rPw2" minlength="8" required
+          autocomplete="new-password"></label>
+      <button type="submit" class="btn-primary" id="regBtn">Gửi đăng ký</button>
+      <p class="login-msg" id="regMsg" role="alert"></p>
+      <p class="swap">Đã có tài khoản? <button type="button" class="link-btn" id="toLogin">Đăng nhập</button></p>
+    </form>
+  </div>
+  <div class="app" id="app" hidden>
+    <nav class="side" aria-label="Menu">
+      <div class="brand"><span class="logo" aria-hidden="true">BC</span>
+        <div><b>Báo cáo tuần</b><small>KT · CĐS · NCPT · ĐCM</small></div>
+      </div>
+      <div class="navlbl">Tổng quan</div>
+      <a href="#dash" data-view="dash">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          aria-hidden="true">
+          <rect x="3" y="3" width="7" height="9" rx="1.5" />
+          <rect x="14" y="3" width="7" height="5" rx="1.5" />
+          <rect x="14" y="12" width="7" height="9" rx="1.5" />
+          <rect x="3" y="16" width="7" height="5" rx="1.5" />
+        </svg>
+        Dashboard</a>
+      <a href="#table" data-view="table">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M3 10h18M3 15h18M9 4v16" />
+        </svg>
+        Bảng công việc</a>
+      <div class="navlbl">Dữ liệu</div>
+      <a href="#import" data-view="import" data-roles="admin editor">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <path d="M17 8l-5-5-5 5" />
+          <path d="M12 3v12" />
+        </svg>
+        Nạp dữ liệu</a>
+      <a href="#users" data-view="users" data-roles="admin">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        Người dùng<span class="badge" id="navPending" hidden title="Yêu cầu đăng ký chờ duyệt"></span></a>
+      <div class="foot">
+        <div class="me">
+          <span class="avatar" id="meAvatar" aria-hidden="true"></span>
+          <div class="me-txt"><b id="meName"></b><small id="meRole"></small></div>
+        </div>
+        <div class="me-actions">
+          <button type="button" class="link-btn" id="changePw">Đổi mật khẩu</button>
+          <button type="button" class="link-btn" id="logout">Đăng xuất</button>
+        </div>
+        <div class="data-info" id="dataInfo">Đang tải dữ liệu…</div>
+      </div>
+    </nav>
+    <main class="main">
+      <div class="pagehead" id="topbar">
+        <div>
+          <h1 id="pageTitle">Dashboard</h1>
+          <div class="psub">Tuần <b id="weekTitle">—</b><span id="updatedAt"></span></div>
+        </div>
+        <div class="wnav" role="group" aria-label="Chọn tuần">
+          <button type="button" id="prevW" aria-label="Tuần trước"><svg width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg></button>
+          <select id="yearSel" aria-label="Chọn năm"></select>
+          <span class="sep" aria-hidden="true"></span>
+          <select id="weekSel" aria-label="Chọn tuần"></select>
+          <button type="button" id="nextW" aria-label="Tuần sau"><svg width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg></button>
+        </div>
+      </div>
+      <div class="overview" id="overview" aria-label="Tổng quan">
+        <span class="skel big"></span><span class="skel big"></span><span class="skel big"></span><span
+          class="skel big"></span>
+      </div>
+      <section id="v-dash" class="dash" hidden>
+        <div class="card">
+          <h2>Tiến độ tổng thể</h2>
+          <p class="sub">Tuần đang xem, so với tuần trước. Bấm vào số để xem các việc đó.</p>
+          <div id="pStatus"><span class="skel big"></span><span class="skel"></span></div>
+        </div>
+        <div class="card">
+          <h2>Đơn vị cần chú ý</h2>
+          <p class="sub">Xếp theo tỷ lệ việc chậm. Rủi ro: Cao ≥ 20% việc chậm, Trung bình ≥ 10%. Bấm một dòng để xem
+            việc chậm.</p>
+          <div id="pUnit"><span class="skel"></span><span class="skel"></span><span class="skel"></span><span
+              class="skel"></span></div>
+        </div>
+        <div class="dlegend" id="dLegend"></div>
+        <div class="card">
+          <h2>Trạng thái theo đơn vị</h2>
+          <p class="sub">Đơn vị đầu mối, tuần đang xem. Bấm vào thanh để xem các việc đó.</p>
+          <div id="cUnit"><span class="skel"></span><span class="skel"></span><span class="skel"></span></div>
+        </div>
+        <div class="card">
+          <h2>Xu hướng theo tuần</h2>
+          <p class="sub">Số việc theo trạng thái, 8 tuần gần nhất.</p>
+          <div id="cTrend"><span class="skel big"></span></div>
+        </div>
+        <div class="card">
+          <h2>Cuộc họp có nhiều việc chậm nhất</h2>
+          <p class="sub">Việc triển khai chậm / quá hạn, tuần đang xem.</p>
+          <div id="cLate"><span class="skel"></span><span class="skel"></span><span class="skel"></span></div>
+        </div>
+      </section>
+      <section id="v-table">
+        <div class="controls">
+          <label class="search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
+            <input type="search" id="q" placeholder="Tìm nội dung, kết luận, khó khăn…" aria-label="Tìm kiếm">
+          </label>
+          <button type="button" id="catChip" class="chip-btn" hidden></button>
+          <button type="button" id="clearAll" class="ghost-btn" hidden>Xóa tất cả bộ lọc</button>
+          <span id="count"></span>
+        </div>
+        <div class="wrap">
+          <table>
+            <colgroup>
+              <col style="width:52px">
+              <col style="width:160px">
+              <col style="width:210px">
+              <col style="width:300px">
+              <col style="width:300px">
+              <col style="width:130px">
+              <col style="width:130px">
+              <col style="width:130px">
+              <col style="width:180px">
+              <col style="width:220px">
+              <col style="width:160px">
+              <col style="width:200px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th data-col="meet">Thông tin cuộc họp</th>
+                <th data-col="name">Tên công việc</th>
+                <th data-col="kl">Nội dung kết luận</th>
+                <th data-col="th">Tình hình thực hiện</th>
+                <th data-col="unit">Đơn vị phụ trách</th>
+                <th data-col="ph">Đơn vị phối hợp</th>
+                <th data-col="dl">Deadline</th>
+                <th data-col="st">Trạng thái</th>
+                <th data-col="kk">Khó khăn, kiến nghị</th>
+                <th data-col="sh">Từ sheet</th>
+                <th data-col="gc">Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody id="list">
+              <tr>
+                <td colspan="12"><span class="skel"></span><span class="skel"></span><span class="skel"></span><span
+                    class="skel"></span><span class="skel"></span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="v-import" class="imp" hidden>
+        <div class="card">
+          <h2>Nạp file Excel báo cáo tuần</h2>
+          <p class="sub">Mỗi tuần nạp 1 file. Số tuần tự điền theo tên file "Tuan 45.2026 - …", sửa được. Nạp lại tuần
+            đã có sẽ cập nhật tuần đó.</p>
+          <form id="importForm" class="iform">
+            <div class="row">
+              <input type="file" id="file" accept=".xlsx,.xlsm,.xls" aria-label="File Excel" required>
+              <label>Tuần <input id="weekIn" placeholder="vd 45/2026" aria-label="Báo cáo của tuần"
+                  pattern="\s*\d{1,2}\s*/\s*\d{4}\s*" required title="Nhập dạng số tuần/năm, vd 45/2026"></label>
+              <button type="submit" class="btn-primary">Nạp &amp; phân loại</button>
+            </div>
+            <p id="importMsg" role="status" class="imsg"></p>
+          </form>
+        </div>
+        <div class="card">
+          <h2>Các tuần đã nạp</h2>
+          <div id="weekList"><span class="skel"></span><span class="skel"></span></div>
+        </div>
+      </section>
+      <section id="v-users" class="imp" hidden>
+        <div class="card pending-card" id="pendingCard" hidden>
+          <h2>Chờ duyệt <span class="badge" id="pendingCount"></span></h2>
+          <p class="sub">Người dùng tự đăng ký. Chọn vai trò rồi bấm Duyệt để cấp quyền, hoặc Từ chối để xóa yêu cầu.
+          </p>
+          <div id="pendingList" style="overflow-x:auto"></div>
+        </div>
+        <div class="card">
+          <h2>Thêm người dùng</h2>
+          <p class="sub">Nhập họ tên, hệ thống tự đề xuất tên đăng nhập (vd: Huỳnh Phương Vân → baolt). Gửi tên đăng
+            nhập + mật khẩu tạm cho người dùng; họ tự đổi mật khẩu sau khi đăng nhập.</p>
+          <form id="userForm" class="uform">
+            <label class="av-pick" title="Chọn ảnh đại diện">
+              <span class="avatar xl" id="uAvPrev"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg></span>
+              <input type="file" id="uAv" accept="image/jpeg,image/png,image/webp" class="sr-only" aria-label="Chọn ảnh đại diện">
+              <small>Ảnh đại diện</small>
+            </label>
+            <div class="ufields">
+              <label>Họ và tên<input id="uName" placeholder="vd: Huỳnh Phương Vân" required autocomplete="off"></label>
+              <label>Tên đăng nhập<input id="uUser" placeholder="tự đề xuất" required autocomplete="off"
+                  autocapitalize="none" spellcheck="false" pattern="[a-z0-9][a-z0-9._\-]{1,31}"
+                  title="2–32 ký tự: chữ thường không dấu, số, dấu . _ -"></label>
+              <label>Mật khẩu tạm<span class="pwrow"><input type="text" id="uPw" placeholder="≥ 8 ký tự" minlength="8"
+                    required autocomplete="off">
+                  <button type="button" class="ghost-btn" id="uGen"
+                    title="Tạo mật khẩu ngẫu nhiên">Tạo</button></span></label>
+              <label>Vai trò<select id="uRole">
+                  <option value="viewer">Xem</option>
+                  <option value="editor">Nhập liệu</option>
+                  <option value="admin">Quản trị</option>
+                </select></label>
+              <button type="submit" class="btn-primary">Thêm người dùng</button>
+            </div>
+            <p class="imsg" id="userMsg" role="status"></p>
+          </form>
+        </div>
+        <div class="card">
+          <h2>Danh sách người dùng</h2>
+          <p class="sub"><b>Quản trị</b>: mọi quyền + quản lý người dùng · <b>Nhập liệu</b>: nạp/xóa dữ liệu tuần + ghi
+            chú · <b>Xem</b>: xem + ghi chú.</p>
+          <div id="userList" style="overflow-x:auto"><span class="skel"></span><span class="skel"></span></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <dialog id="pwDlg" class="dlg">
+    <form method="dialog" id="pwForm">
+      <h3 id="pwTitle">Đổi mật khẩu</h3>
+      <label>Mật khẩu mới<input type="password" id="pw1" minlength="8" required autocomplete="new-password"></label>
+      <label>Nhập lại<input type="password" id="pw2" minlength="8" required autocomplete="new-password"></label>
+      <p class="login-msg" id="pwMsg" role="alert"></p>
+      <div class="dlg-act"><button type="button" class="ghost-btn" id="pwCancel">Hủy</button><button type="submit"
+          class="btn-primary" value="ok">Lưu</button></div>
+    </form>
+  </dialog>
+  <div id="drawerBg" class="drawer-bg" hidden></div>
+  <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="dName" hidden>
+    <header>
+      <div>
+        <div class="d-meet" id="dMeet"></div>
+        <h3 id="dName"></h3>
+      </div>
+      <button type="button" class="x" id="dClose" aria-label="Đóng">✕</button>
+    </header>
+    <div class="d-body" id="dBody"></div>
+  </aside>
+  <div id="tip" role="tooltip" hidden></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <!-- modal dùng chung thay cho alert/confirm/prompt của trình duyệt -->
+  <dialog id="uiDlg" class="dlg" aria-labelledby="uiTitle">
+    <form id="uiForm">
+      <h3 id="uiTitle"></h3>
+      <p id="uiMsg" class="ui-msg"></p>
+      <input id="uiInput" autocomplete="off" spellcheck="false">
+      <div class="dlg-act"><button type="button" class="ghost-btn" id="uiCancel">Hủy</button><button type="submit" class="btn-primary" id="uiOk">OK</button></div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

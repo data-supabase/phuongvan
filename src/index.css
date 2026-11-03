@@ -1,0 +1,73 @@
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+@import '@fontsource/be-vietnam-pro/700.css';
+@import '@fontsource/be-vietnam-pro/800.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg font-sans text-base text-ink antialiased;
+  }
+  [hidden] {
+    display: none !important;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+    outline-style: solid;
+  }
+  /* iOS không tự phóng to khi focus ô nhập */
+  @media (max-width: 860px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+  /* hộp thoại native: bỏ viền mặc định */
+  dialog {
+    @apply m-auto border-0 bg-transparent p-0 text-ink;
+  }
+  dialog::backdrop {
+    background: rgba(15, 23, 42, 0.4);
+    animation: fade-in 150ms ease-out;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-2xs font-bold uppercase text-muted;
+    letter-spacing: 0.08em;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .scroll-thin {
+    scrollbar-width: thin;
+  }
+}
+
+/* F-UI: hiệu ứng thống nhất 150/250 ms, tắt khi người dùng yêu cầu giảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
