@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

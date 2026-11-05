@@ -10,7 +10,7 @@ export const CATS: [Cat, string][] = [
 
 export const CAT_LABEL: Record<Cat, string> = Object.fromEntries(CATS) as Record<Cat, string>;
 
-/** Màu đặc cho biểu đồ; đồng bộ với colors.*.fill trong tailwind.config.ts */
+/** Màu đặc cho biểu đồ; đồng bộ với colors.*.fill trong config/tailwind.config.ts */
 export const CAT_FILL: Record<Cat, string> = { done: '#4caf6e', doing: '#e9b02b', late: '#d9483b', todo: '#9b86d6' };
 
 export function statusClass(s: string | null | undefined): Cat {
